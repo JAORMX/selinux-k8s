@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: selinux-k8s
+spec:
+  containers:
+  - name: selinux-k8s
+    image: image-registry.openshift-image-registry.svc:5000/default/selinux-k8s:latest
+    command: ['selinuxk8s']
+    args: ['--name', 'selinux-k8s']
+    securityContext:
+      privileged: true
+    volumeMounts:
+    - name: fsselinux
+      mountPath: /sys/fs/selinux
+    - name: etcselinux
+      mountPath: /etc/selinux
+    - name: varlibselinux
+      mountPath: /var/lib/selinux
+    - name: varruncrio
+      mountPath: /var/run/crio
+    - name: crictlyaml
+      mountPath: /etc/crictl.yaml
+  restartPolicy: Never
+  volumes:
+  - name: fsselinux
+    hostPath:
+      path: /sys/fs/selinux
+      type: Directory
+  - name: etcselinux
+    hostPath:
+      path: /etc/selinux
+      type: Directory
+  - name: varlibselinux
+    hostPath:
+      path: /var/lib/selinux
+      type: Directory
+  - name: varruncrio
+    hostPath:
+      path: /var/run/crio
+      type: Directory
+  - name: crictlyaml
+    hostPath:
+      path: /etc/crictl.yaml
+      type: File
+  serviceAccount: selinux-operator
