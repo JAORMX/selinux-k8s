@@ -5,9 +5,9 @@ metadata:
 spec:
   containers:
   - name: selinux-k8s
-    image: image-registry.openshift-image-registry.svc:5000/default/selinux-k8s:latest
+    image: quay.io/jaosorior/selinux-k8s:latest
     command: ['selinuxk8s']
-    args: ['--name', 'selinux-k8s']
+    args: ['--label', 'k8s-app=machine-config-daemon']
     securityContext:
       privileged: true
     volumeMounts:
