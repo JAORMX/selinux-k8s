@@ -35,9 +35,12 @@ def get_pod_filter(args):
     return ["--label", args.label]
 
 def get_pod_id(podfilter):
-    return subprocess.check_output(
+    podid = subprocess.check_output(
             ["crictl", "pods", "-q"] + podfilter
-        ).decode().rstrip()
+        ).decode().rstrip().split("\n")
+    if not podid:
+        raise Exception('Pod not found with filter "%s"' % podfilter)
+    return podid[0]
 
 def get_pod_name(pod_data):
     return pod_data["status"]["metadata"]["name"]
