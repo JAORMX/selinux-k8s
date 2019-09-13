@@ -1,4 +1,4 @@
-FROM udica:latest
+FROM quay.io/jaosorior/udica:latest
 
 USER root
 
