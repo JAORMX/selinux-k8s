@@ -31,12 +31,20 @@ def get_args():
     selector_group.add_argument(
         '--label', type=str, help='label to identify the pod', dest='label',
         default=None)
+    parser.add_argument(
+        '--namespace', type=str, help='Running pod namespace', dest='namespae',
+        default=None)
     return parser.parse_args()
 
 def get_pod_filter(args):
+    podfilter = None
     if args.podname:
-        return ["--name", args.podname]
-    return ["--label", args.label]
+        podfilter = ["--name", args.podname]
+    else:
+        podfilter = ["--label", args.label]
+    if args.namespace:
+        return podfilter + ["--namespace", args.namespace]
+    return podfilter
 
 def get_pod_id(podfilter):
     podid = subprocess.check_output(

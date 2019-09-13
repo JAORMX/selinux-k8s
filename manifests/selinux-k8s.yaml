@@ -24,6 +24,7 @@ spec:
     - name: crictlyaml
       mountPath: /etc/crictl.yaml
   restartPolicy: Never
+  nodeName: ip-10-0-148-79.ec2.internal
   volumes:
   - name: fsselinux
     hostPath:
