@@ -32,7 +32,7 @@ def get_args():
         '--label', type=str, help='label to identify the pod', dest='label',
         default=None)
     parser.add_argument(
-        '--namespace', type=str, help='Running pod namespace', dest='namespae',
+        '--namespace', type=str, help='Running pod namespace', dest='namespace',
         default=None)
     return parser.parse_args()
 
