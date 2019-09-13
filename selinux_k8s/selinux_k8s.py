@@ -14,6 +14,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import argparse
+import base64
+import gzip
 import json
 import subprocess
 
@@ -76,15 +78,32 @@ def get_udica_args(udicaid, pod_data):
 def get_udica_file_base_name(podname, containername):
     return podname + "-" + containername
 
-def create_config_map(name, policy):
+def create_config_map(name, policy, compressed=False):
+    annotations = {}
+    if compressed:
+        annotations = {
+            "selinux-policy-helper/compressed": ""
+        }
     return kubernetes.client.V1ConfigMap(
         api_version="v1",
         kind="ConfigMap",
-        metadata=kubernetes.client.V1ObjectMeta(name=name),
+        metadata=kubernetes.client.V1ObjectMeta(
+            name=name,
+            annotations=annotations
+        ),
         data={
             "policy": policy
         }
     )
+
+def policy_needs_compression(policy):
+    return len(policy) > 1048570
+
+def compress_policy(policy):
+    # Encode the CIL policy in ascii, compress it with gzip, b64encode it so it
+    # can be stored in the configmap, and finally pass the bytes to a UTF-8
+    # python3 sring.
+    return base64.b64encode(gzip.compress(policy.encode('ascii'))).decode()
 
 def main():
     """Main entrypoint"""
@@ -109,8 +128,14 @@ def main():
             print(proc.communicate(input=container_raw_data.encode())[0])
             with open(udica_file_base + ".cil", 'r') as cil:
                 policy = cil.read()
+                compressed = False
+
+                if policy_needs_compression(policy):
+                    policy = compress_policy(policy)
+                    compressed = True
+
                 confmap = create_config_map("policy-for-" + udica_file_base,
-                                            policy)
+                                            policy, compressed=compressed)
                 resp = k8sv1api.create_namespaced_config_map(
                     body=confmap,
                     namespace="selinux-policy-helper-operator")
