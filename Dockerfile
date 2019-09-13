@@ -6,6 +6,7 @@ USER root
 RUN dnf module enable -y cri-o:1.14 && \
     dnf install --disableplugin=subscription-manager -y \
         cri-tools \
+        python3-kubernetes \
     && rm -rf /var/cache/yum
 
 # build selinux-k8s

@@ -6,8 +6,10 @@ spec:
   containers:
   - name: selinux-k8s
     image: quay.io/jaosorior/selinux-k8s:latest
-    command: ['selinuxk8s']
-    args: ['--label', 'k8s-app=machine-config-daemon']
+    #command: ['selinuxk8s']
+    #args: ['--label', 'k8s-app=machine-config-daemon']
+    command: ["/bin/sh"]
+    args: ["-c", "while true; do echo hello; sleep 10;done"]
     securityContext:
       privileged: true
     volumeMounts:
@@ -43,4 +45,4 @@ spec:
     hostPath:
       path: /etc/crictl.yaml
       type: File
-  serviceAccount: selinux-operator
+  serviceAccount: selinux-policy-helper-operator

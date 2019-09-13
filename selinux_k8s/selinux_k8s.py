@@ -17,6 +17,8 @@ import argparse
 import json
 import subprocess
 
+import kubernetes
+
 def get_args():
     parser = argparse.ArgumentParser(description='Script generates SELinux'
                                                  'policy for running k8s pod.')
@@ -72,10 +74,24 @@ def get_udica_args(udicaid, pod_data):
     return udica_args
 
 def get_udica_file_base_name(podname, containername):
-    return podname + "_" + containername
+    return podname + "-" + containername
+
+def create_config_map(name, policy):
+    return kubernetes.client.V1ConfigMap(
+        api_version="v1",
+        kind="ConfigMap",
+        metadata=kubernetes.client.V1ObjectMeta(name=name),
+        data={
+            "policy": policy
+        }
+    )
 
 def main():
     """Main entrypoint"""
+    kubernetes.config.load_incluster_config()
+
+    k8sv1api = kubernetes.client.CoreV1Api()
+
     args = get_args()
     podfilter = get_pod_filter(args)
     podid = get_pod_id(podfilter)
@@ -91,11 +107,14 @@ def main():
         udica_args = get_udica_args(udica_file_base, pod_data)
         with subprocess.Popen(udica_args, stdin=subprocess.PIPE) as proc:
             print(proc.communicate(input=container_raw_data.encode())[0])
-            print("====================")
-            print("Policy for pod %s - container %s" %(podname, containername))
-            print("====================\n")
             with open(udica_file_base + ".cil", 'r') as cil:
-                print(cil.read())
+                policy = cil.read()
+                confmap = create_config_map("policy-for-" + udica_file_base,
+                                            policy)
+                resp = k8sv1api.create_namespaced_config_map(
+                    body=confmap,
+                    namespace="selinux-policy-helper-operator")
+                print("ConfigMap created: %s" % resp.metadata.name)
 
 
 if __name__ == "__main__":
