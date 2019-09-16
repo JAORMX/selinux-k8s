@@ -84,7 +84,7 @@ def get_udica_args(udicaid, pod_data):
     return udica_args
 
 def get_udica_file_base_name(podname, containername):
-    return podname + "-" + containername
+    return podname + "_" + containername
 
 def create_config_map(name, policy, compressed=False):
     annotations = {}
@@ -142,7 +142,8 @@ def main():
                     policy = compress_policy(policy)
                     compressed = True
 
-                confmap = create_config_map("policy-for-" + udica_file_base,
+                confmap = create_config_map("policy-for-" +
+                                            udica_file_base.replace("_", "-"),
                                             policy, compressed=compressed)
                 resp = k8sv1api.create_namespaced_config_map(
                     body=confmap,
