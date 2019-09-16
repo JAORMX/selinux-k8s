@@ -79,7 +79,7 @@ def get_udica_args(udicaid, pod_data):
     network_flag = []
     if needs_host_network(pod_data):
         network_flag = ["--full-network-access"]
-    udica_args = ["udica", "-j", "-", udicaid]
+    udica_args = ["udica", "-j", "-", udicaid.replace("-", "_")]
     udica_args += network_flag
     return udica_args
 
