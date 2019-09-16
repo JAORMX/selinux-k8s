@@ -100,7 +100,7 @@ def create_config_map(name, policy, compressed=False):
             annotations=annotations
         ),
         data={
-            "policy": policy
+            "policy.cil": policy
         }
     )
 
