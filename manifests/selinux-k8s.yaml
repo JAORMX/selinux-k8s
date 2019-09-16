@@ -6,10 +6,8 @@ spec:
   containers:
   - name: selinux-k8s
     image: quay.io/jaosorior/selinux-k8s:latest
-    #command: ['selinuxk8s']
-    #args: ['--label', 'k8s-app=machine-config-daemon']
-    command: ["/bin/sh"]
-    args: ["-c", "while true; do echo hello; sleep 10;done"]
+    command: ['selinuxk8s']
+    args: ['--label', 'k8s-app=machine-config-daemon']
     securityContext:
       privileged: true
     volumeMounts:
@@ -24,7 +22,6 @@ spec:
     - name: crictlyaml
       mountPath: /etc/crictl.yaml
   restartPolicy: Never
-  nodeName: ip-10-0-148-79.ec2.internal
   volumes:
   - name: fsselinux
     hostPath:
