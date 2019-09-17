@@ -79,14 +79,14 @@ def get_udica_args(udicaid, pod_data):
     network_flag = []
     if needs_host_network(pod_data):
         network_flag = ["--full-network-access"]
-    udica_args = ["udica", "-j", "-", udicaid.replace("-", "_")]
+    udica_args = ["udica", "-j", "-", udicaid]
     udica_args += network_flag
     return udica_args
 
 def get_udica_file_base_name(podname, containername):
     return podname + "_" + containername
 
-def create_config_map(name, policy, compressed=False):
+def create_config_map(name, file_name, policy, compressed=False):
     annotations = {}
     if compressed:
         annotations = {
@@ -100,7 +100,7 @@ def create_config_map(name, policy, compressed=False):
             annotations=annotations
         ),
         data={
-            "policy.cil": policy
+            file_name: policy
         }
     )
 
@@ -144,6 +144,7 @@ def main():
 
                 confmap = create_config_map("policy-for-" +
                                             udica_file_base.replace("_", "-"),
+                                            udica_file_base,
                                             policy, compressed=compressed)
                 resp = k8sv1api.create_namespaced_config_map(
                     body=confmap,
