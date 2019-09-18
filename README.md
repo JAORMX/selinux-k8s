@@ -17,3 +17,7 @@ TODO
 
 - [ ] Handle duplicated ConfigMaps: What happens when the ConfigMap that this
   tool is trying to create already exists? Should it overwrite, ignore or fail?
+
+- [ ] Get capabilities for pods
+
+- [ ] Read extra capabilities needed for a specific pod (user provided)
