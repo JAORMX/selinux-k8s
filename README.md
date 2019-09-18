@@ -2,7 +2,7 @@ selinux-k8s
 ===========
 
 This is a small script that wraps up udica and allows you to scan containers
-from a Kubernetes deployment's CRI, and generate selinux policies from them.
+from a Kubernetes deployment's CRI, and generate SELinux policies from them.
 The script will create a ConfigMap in the namespace where the pod is running.
 
 Normally one would deploy this as a pod (either directly or from an operator).
