@@ -84,24 +84,32 @@ def get_udica_args(udicaid, pod_data):
     return udica_args
 
 def get_udica_file_base_name(podname, containername):
-    return podname + "_" + containername
+    return podname + "-" + containername
 
-def create_config_map(name, file_name, policy, compressed=False):
+def create_policy_object(k8sapi, name, namespace, file_name, policy, compressed=False):
     annotations = {}
     if compressed:
         annotations = {
             "selinux-policy-helper/compressed": ""
         }
-    return kubernetes.client.V1ConfigMap(
-        api_version="v1",
-        kind="ConfigMap",
-        metadata=kubernetes.client.V1ObjectMeta(
-            name=name,
-            annotations=annotations
-        ),
-        data={
-            file_name + ".cil": policy
+    policy_resource = {
+        "apiVersion": "selinux.openshift.io/v1alpha1",
+        "kind": "SelinuxPolicy",
+        "metadata": {
+            "name": name,
+            "namespace": namespace,
+            "annotations": annotations,
+        },
+        "spec": {
+            "policy": policy
         }
+    }
+    return k8sapi.create_namespaced_custom_object(
+        group="selinux.openshift.io",
+        version="v1alpha1",
+        namespace="default",
+        plural="selinuxpolicies",
+        body=policy_resource,
     )
 
 def policy_needs_compression(policy):
@@ -113,11 +121,19 @@ def compress_policy(policy):
     # python3 sring.
     return base64.b64encode(gzip.compress(policy.encode('ascii'))).decode()
 
+def get_inner_policy(policy):
+    if len(policy) < 2:
+        raise RuntimeError("Invalid policy read")
+    first_p_idx = policy.index("(")
+    second_p_idx = policy.index("(", first_p_idx + 1)
+    last_p_idx = policy.rindex(")")
+    return policy[second_p_idx:last_p_idx]
+
 def main():
     """Main entrypoint"""
     kubernetes.config.load_incluster_config()
 
-    k8sv1api = kubernetes.client.CoreV1Api()
+    k8sapi = kubernetes.client.CustomObjectsApi()
 
     args = get_args()
     podfilter = get_pod_filter(args)
@@ -142,14 +158,13 @@ def main():
                     policy = compress_policy(policy)
                     compressed = True
 
-                confmap = create_config_map("policy-for-" +
-                                            udica_file_base.replace("_", "-"),
-                                            udica_file_base,
-                                            policy, compressed=compressed)
-                resp = k8sv1api.create_namespaced_config_map(
-                    body=confmap,
-                    namespace="selinux-policy-helper-operator")
-                print("ConfigMap created: %s" % resp.metadata.name)
+                policy = get_inner_policy(policy)
+                resp = create_policy_object(k8sapi, udica_file_base,
+                                               args.namespace,
+                                               udica_file_base,
+                                               policy, compressed=compressed)
+                print(resp)
+                print("SelinuxPolicy created: %s" % udica_file_base)
 
 
 if __name__ == "__main__":
