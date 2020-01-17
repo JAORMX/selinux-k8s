@@ -107,7 +107,7 @@ def create_policy_object(k8sapi, name, namespace, file_name, policy, compressed=
     return k8sapi.create_namespaced_custom_object(
         group="selinux.openshift.io",
         version="v1alpha1",
-        namespace="default",
+        namespace=namespace,
         plural="selinuxpolicies",
         body=policy_resource,
     )
