@@ -20,6 +20,7 @@ import json
 import subprocess
 
 import kubernetes
+from kubernetes.client.rest import ApiException
 
 def get_args():
     parser = argparse.ArgumentParser(description='Script generates SELinux'
@@ -86,13 +87,13 @@ def get_udica_args(udicaid, pod_data):
 def get_udica_file_base_name(podname, containername):
     return podname + "-" + containername
 
-def create_policy_object(k8sapi, name, namespace, file_name, policy, compressed=False):
+def get_policy_object(name, namespace, policy, compressed):
     annotations = {}
     if compressed:
         annotations = {
             "selinux-policy-helper/compressed": ""
         }
-    policy_resource = {
+    return {
         "apiVersion": "selinux.openshift.io/v1alpha1",
         "kind": "SelinuxPolicy",
         "metadata": {
@@ -104,7 +105,20 @@ def create_policy_object(k8sapi, name, namespace, file_name, policy, compressed=
             "policy": policy
         }
     }
+
+def create_policy_object(k8sapi, name, namespace, policy, compressed=False):
+    policy_resource = get_policy_object(name, namespace, policy, compressed)
     return k8sapi.create_namespaced_custom_object(
+        group="selinux.openshift.io",
+        version="v1alpha1",
+        namespace=namespace,
+        plural="selinuxpolicies",
+        body=policy_resource,
+    )
+
+def update_policy_object(k8sapi, name, namespace, policy, compressed=False):
+    policy_resource = get_policy_object(name, namespace, policy, compressed)
+    return k8sapi.patch_namespaced_custom_object(
         group="selinux.openshift.io",
         version="v1alpha1",
         namespace=namespace,
@@ -159,12 +173,24 @@ def main():
                     compressed = True
 
                 policy = get_inner_policy(policy)
-                resp = create_policy_object(k8sapi, udica_file_base,
-                                               args.namespace,
-                                               udica_file_base,
-                                               policy, compressed=compressed)
-                print(resp)
-                print("SelinuxPolicy created: %s" % udica_file_base)
+                try:
+                    resp = create_policy_object(k8sapi, udica_file_base,
+                                                args.namespace,
+                                                policy,
+                                                compressed)
+                    print(resp)
+                    print("SelinuxPolicy created: %s" % udica_file_base)
+                except ApiException as apiex:
+                    # Handle Conflicts
+                    if apiex.status == 409:
+                        resp = update_policy_object(k8sapi, udica_file_base,
+                                                    args.namespace,
+                                                    policy,
+                                                    compressed)
+                        print(resp)
+                        print("SelinuxPolicy updated: %s" % udica_file_base)
+                    else:
+                        raise apiex
 
 
 if __name__ == "__main__":
